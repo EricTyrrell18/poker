@@ -14,8 +14,12 @@ class Card:
         self.rank = rank
 
 
-     
-    	
+    def get_suit(self):     
+    	return self.suit
+    def get_rank(self):
+        return self.rank
+
+
 
 
 if __name__ == "__main__":
