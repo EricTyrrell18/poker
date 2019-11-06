@@ -13,6 +13,8 @@ class Card:
         self.suit = suit
         self.rank = rank
 
+    def __str__(self):
+        return "{} of {}".format(self.rank.name.lower(), self.suit.name.lower())
 
     def get_suit(self):     
     	return self.suit
@@ -30,3 +32,4 @@ if __name__ == "__main__":
     assert c1.suit in Suit and c1.rank in Rank 
    
     print("card.py tests over")
+    print(str(c1))
