@@ -12,4 +12,5 @@ class TexasHoldemHand():
     def __str__(self):
         return "{}, {}".format(str(self.hole_card1), str(self.hole_card2))
 
-
+    def get_hole_cards(self):
+        return [self.hole_card1, self.hole_card2]

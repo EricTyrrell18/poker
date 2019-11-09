@@ -1,8 +1,14 @@
 
-@abstract
-class PokerHand():
-    def __init__(self):
-        pass
+from enum import Enum
 
-    def compare(self, other_hand):
-        pass
+class PokerHand(Enum):
+    HIGH_CARD
+    PAIR
+    TWO_PAIR
+    THREE_OF_KIND
+    STRAIGHT
+    FLUSH
+    FULL_HOUSE
+    FOUR_OF_KIND
+    STRAIGHT_FLUSH
+
