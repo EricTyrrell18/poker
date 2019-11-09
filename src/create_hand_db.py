@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import pickle
-from card import Card
-from deck import Deck
-from rank import Rank
-from suit import Suit
+from cards import Card, Deck, Rank, Suit
 from itertools import islice, combinations
 from functools import reduce
 class FiveCardGenerator():

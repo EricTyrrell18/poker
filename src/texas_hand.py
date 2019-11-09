@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
 
-from card import Card
+from cards import Card
 
 class TexasHoldemHand():
     def __init__(self, hole_card1, hole_card2):

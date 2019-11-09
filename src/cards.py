@@ -1,10 +1,50 @@
 #!/usr/bin/env python3
-
-from card import Card
-from rank import Rank
-from suit import Suit
+import enum
 from itertools import product
 from random import shuffle
+class Rank(enum.Enum):
+    """Prime Values for looking up hand values"""
+    TWO = 2
+    THREE = 3
+    FOUR = 5
+    FIVE = 7
+    SIX = 11
+    SEVEN = 13
+    EIGHT = 17
+    NINE = 19
+    TEN = 23
+    JACK = 29
+    QUEEN = 31
+    KING = 37
+    ACE = 41
+
+
+class Suit(enum.Enum):
+    HEARTS = 1
+    DIAMONDS = 2
+    SPADES = 3
+    CLUBS = 4
+
+
+class Card:
+    def __init__(self, rank, suit):
+        if not suit in Suit:
+            raise ValueError("suit value not Suit Enum")
+        if not rank in Rank:
+            raise ValueError("rank value not in Rank Enum")
+
+        self.suit = suit
+        self.rank = rank
+
+    def __str__(self):
+        return "{} of {}".format(self.rank.name.lower(), self.suit.name.lower())
+
+    def get_suit(self):     
+    	return self.suit
+    def get_rank(self):
+        return self.rank
+
+
 class Deck():
     def __init__(self):
         """
@@ -47,33 +87,4 @@ class Deck():
             raise IndexError("No Cards Left To Deal")
         self.dealt_cards.append(self.deck[-1])                
         return self.deck.pop()
-   
-if __name__ == "__main__":
-    # Test creating deck
-    deck = Deck()
-    assert len(deck.deck) == 52
-    # Check dealing cards
-    c1 = deck.deal_card()
-    assert c1.get_suit() == Suit.CLUBS and c1.get_rank() == Rank.ACE
-    assert len(deck.dealt_cards) == 1
-    assert len(deck.deck) == 51
-    # Shuffle chekc
-    deck.shuffle()
-    assert len(deck.dealt_cards) == 0
-    assert len(deck.deck) == 52
-    # Deck with only one card
-    deck.deck = [Card(Rank.TWO, Suit.HEARTS)]
-    deck.deal_card()
-    assert len(deck.deck) == 0
-    assert len(deck.dealt_cards) == 1
-    
-    # There's probably a better way
-    # Make sure it can't be overdealt
-    try:
-        deck.deal_card()
-        raise AssertionError("Deck Can be overdealt")
-    except IndexError:
-        pass
-
-
 

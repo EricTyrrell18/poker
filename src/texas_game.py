@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-from game import Game
 from texas_hand_eval import TexasHandEvaluator
 from texas_hand import TexasHoldemHand
 from player import Player
-from deck import Deck
+from cards import Deck
 from itertools import combinations
 class TexasHoldemGame(Game):
     def __init__(self, *players):

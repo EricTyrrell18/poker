@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-
+import sys
 import pickle
 from functools import reduce
-from suit import Suit
+from cards import Suit
 class TexasHandEvaluator():
     
     def __init__(self):
