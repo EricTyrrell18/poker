@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Module for Texas Hold'em."""
 from cards import Card, Suit, Deck
 
 from functools import reduce
@@ -9,6 +10,7 @@ import pickle
 from itertools import combinations
 
 class TexasHoldemHand():
+    """Two card Texas Hold'em hand."""
     def __init__(self, hole_card1, hole_card2):
         """2 cards"""
 
@@ -22,19 +24,33 @@ class TexasHoldemHand():
         return [self.hole_card1, self.hole_card2]
 
 class TexasHandEvaluator():
-    
+    """
+    Evaluator for Texas Hold'em Hands.
+    Uses a database created by create_hands_dict.py.
+    """
     def __init__(self):
+        """loads the dict"""
         self.load_hand_db()
         #print(self.hand_rankings)
     def load_hand_db(self):
+        """Funciton that actually opens the file"""
         f = open("handDB.pkl", "rb")
         self.hand_rankings = pickle.load(f)
         f.close()
     
     def hash_hand(self, hand):
+        """
+        Helper function to get a unique hash from a hand.
+        Works because of prime numbers as the card values
+        """
         return reduce(lambda x,y: x*y, [card.rank.value for card in hand] )
 
     def evaluate_hand(self, hand):
+        """
+        Evaluates the rank of the hand.
+        Gets the rank of the hand from the loaded dict
+        If it sees a flush, it adds an offset to move the flush to the right spot.
+        """
         # Return the rank of the given hand 
         hand_hash = self.hash_hand(hand)
         
@@ -56,6 +72,13 @@ class TexasHandEvaluator():
         return hand_rank
 
     def is_flush(self, hand):
+        """
+        Checks if the hand's a flush.
+        since True + True == 2 
+        and True + False = 1
+        We can easily check how many suits there are in a hand
+        """
+        #TODO: Is this actually efficient?
         suits = [card.suit for card in hand]
         
         # True + True == 2
@@ -64,41 +87,48 @@ class TexasHandEvaluator():
         # If it's greater than one it can't be a flush
         return suit_check == 1
 
-    def is_straight(self):
-        pass
 
-if __name__ == "__main__":
-    print("evaluator")
-    k = TexasHandEvaluator()
 
-#!/usr/bin/env python3
 class TexasHoldemGame():
+    """Game Implementations of Texas Hold'em."""
+
     def __init__(self, *players):
+        """Crete the Evaluator, Deck, and Players."""
         self.evaluator = TexasHandEvaluator()
         self.deck = Deck()
         self.players = players
 
     def start_hand(self):
+        """Clear the board, shuffle the deck, and deal the cards."""
         self.board = []
         self.deck.shuffle()
         self.deal_hole_cards()
     
     def deal_hole_cards(self):
+        """Deals cards to every player."""
         for player in self.players:
             hand = TexasHoldemHand(self.deck.deal_card(),self.deck.deal_card())
             player.set_hand(hand)
 
     def flop(self):
+        """Deals three cards on the flop"""
         for i in range(3):
            self.board.append(self.deck.deal_card())
 
     def turn(self):
+        """Deals one card on the turn"""
         self.board.append(self.deck.deal_card())
    
     def river(self):
+        """Deals one card on the river"""
         self.board.append(self.deck.deal_card())
 
     def showdown(self):
+        """
+        Determines who won the hand.
+        Currently, has to go through every 5 card combination to determine the winner.
+        This could be improved by creating a seven card dict by leveraging the existing 5 card dict.
+        """
         # Pick the winner
         best_hand = -1
         winner_name = "Wrong"
@@ -119,10 +149,12 @@ class TexasHoldemGame():
         print(winner_name)
 
     def display_players(self):
+        """Print information about the players"""
         for player in self.players:
             print("{}: {}".format(player.name, player.get_hand()))
    
     def display_board(self):
+        """Print the cards on the table."""
         print([str(c) for c in self.board])
 
 if __name__ == "__main__":
