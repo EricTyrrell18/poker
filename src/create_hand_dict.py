@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Run this module to create a hand rank dictionary.
 Generates the ranks for each possible hand in Texas Hold'em
@@ -5,7 +7,6 @@ Note: Despite having space set aside for flushes, this script only looks at the 
 This means That an evaluating function will have to add a magic number of 5863 to flushes.
 This'll put all regular flushes in the flush area of the dict, and all straight flushes to the top
 """
-#!/usr/bin/env python3
 import sys
 import pickle
 from cards import Card, Deck, Rank, Suit

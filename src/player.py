@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Module pertaining to Poker Players"""
-
+from enum import Enum
+import re
 class Player():
     """Player base class"""
     def __init__(self, name):
@@ -98,3 +99,56 @@ class Player():
         print("name: {}".format(self.name))
         print("chips: {}".format(self.stack_size))
         print("cur_bet: {}".format(self.cur_bet))
+
+
+
+class PlayerActionEnum(Enum):
+    CHECK = 0
+    CALL = 1
+    BET = 2
+    RAISE = 3
+    ALL_IN = 4
+    FOLD = 5
+
+    @staticmethod        
+    def grok_action(action):
+        """Determines which action a string is by using Regex"""
+        check_regex = r"^[Cc]heck$"
+        call_regex = r"^[Cc]all$"
+        bet_regex = r"^[Bb]et$"
+        raise_regex = r"^[Rr]aise$"
+        all_in_regex = r"^[Aa]ll ?[Ii]n$"
+
+        if re.search(check_regex, action):
+            return PlayerActionEnum.CHECK
+        elif re.search(call_regex, action):
+            return PlayerActionEnum.CALL
+        elif re.search(bet_regex, action):
+            return PlayerActionEnum.BET
+        elif re.search(raise_regex, action):
+            return PlayerActionEnum.RAISE
+        elif re.search(all_in_regex, action):
+            return PlayerActionEnum.ALL_IN
+        else:
+            raise ValueError("Please retype your action")
+
+
+class PlayerAction():
+    def __init__(self, action, bet):
+        self.set_action(action)
+        self.set_bet(bet)
+
+    def get_action(self):
+        return self.action
+
+    def get_bet(self):
+        return self.bet
+
+    def set_action(self, action):
+        self.action = PlayerActionEnum.grok_action(action)
+
+    def set_bet(self, bet):
+        if not bet >= 0:
+            raise ValueError
+        self.bet = bet
+    
