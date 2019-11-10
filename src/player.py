@@ -2,14 +2,15 @@
 """Module pertaining to Poker Players"""
 from enum import Enum
 import re
+import logging
 class Player():
     """Player base class"""
     def __init__(self, name):
         self.name = name
-        self.stack_size = 500
+        self.chips = 500
         #Use this to keep track of how much money they have in the current street of action
         self.cur_bet = 0
-
+        self.test = 0
     def __eq__(self, other):
         return self.name == other.name
 
@@ -22,7 +23,7 @@ class Player():
     def set_name(self, name):
         self.name = name
   
-    def get_action(self, cur_bet):
+    def get_action(self, cur_bet, min_bet):
         """
         Determines what actions the players allowed to make and prompts them.
         Basic scenarios to be aware of include (Big Blind = 2):
@@ -49,7 +50,7 @@ class Player():
         if self.cur_bet == cur_bet:
             #Should only be called when it is preflop and the action gets back to the big blind and no one's raised
             print("Check or Raise")
-        elif self.stack_size - cur_bet < 0:
+        elif self.chips - cur_bet < 0:
             print("Fold or All in")
         elif cur_bet == 0:
             print("Check or Bet")
@@ -57,47 +58,73 @@ class Player():
         #    print("Fold or Call")
         else:
             print("Fold, call or raise")
-        import texas_holdem
-        action = input() 
-        print(action)
-        if action == "Fold":
-            bet = 0
-        elif action == "Bet":
-            print("{} chips".format(str(self.stack_size)))
-            bet = int(input("How much do you want to bet?"))
-        elif action == "Raise":
-            print("{} chips".format(str(self.stack_size)))
-            bet = int(input("How much do you want to bet?"))
-        elif action == "Call":
-            bet = 0
-        elif action == "Check":
-            bet = 0 
-        elif action == "All in":
-            bet = self.stack_size
-        else: 
-            raise ValueError("invalid Action")
+        
+        valid_action = False
+        action = None
 
-        return (action, bet)
+        while not valid_action:
+            try:
+                action = PlayerAction(self.get_input_action(), 0)
+                if action.get_action() == PlayerActionEnum.ALL_IN:
+                    action.set_bet(self.chips)
+                elif action.get_action() == PlayerActionEnum.BET:
+                    print("action is bet")
+                    bet = self.get_input_bet()
+                    action.set_bet(bet)
+                    print("bet = {}".format(action.get_bet()))
+                    if action.get_bet() > self.chips:
+                        raise ValueError("Don't have enough chips")
+                    if action.get_bet() < min_bet:
+                        raise ValueError("Bet not large enough")
+                elif action.get_action() == PlayerActionEnum.CALL:
+                    action.set_bet(cur_bet)
+                elif action.get_action() == PlayerActionEnum.FOLD:
+                    pass
+                else:
+                    print("What is this?")
+                valid_action = True
+            except ValueError:
+                continue
+        self.make_bet(action.get_bet()) 
+
+        return action
 
     def get_cur_bet(self):
         return self.cur_bet
+    def get_chips(self):
+        return self.chips
 
     def add_to_stack(self, chips):
-        self.stack_size += chips
+        self.chips += chips
 
     def win_hand(self, chips):
         self.add_to_stack(chips)
 
+    def get_input_bet(self):
+        print("{} chips".format(str(self.chips)))
+        bet = int(input("How much do you want to bet?"))
+        self.test = bet
+        return bet
+
+    def get_input_action(self):
+        action = input("What action will you take?")
+        return action
+
+    def make_bet(self, chips):
+        """Subtract the bet from our chips and make a note of how much we've bet"""
+        self.chips -= (chips - self.cur_bet)
+        self.cur_bet = chips
+
     def subtract_from_stack(self, chips):
         chips = (chips - self.cur_bet)
-        if chips > self.stack_size:
+        if chips > self.chips:
             raise ValueError("Not Enough chips, did you mean to go all in instead?")
-        self.stack_size -= chips 
+        self.chips -= chips 
         self.cur_bet += chips
 
     def display_player(self):
         print("name: {}".format(self.name))
-        print("chips: {}".format(self.stack_size))
+        print("chips: {}".format(self.chips))
         print("cur_bet: {}".format(self.cur_bet))
 
 
@@ -118,7 +145,7 @@ class PlayerActionEnum(Enum):
         bet_regex = r"^[Bb]et$"
         raise_regex = r"^[Rr]aise$"
         all_in_regex = r"^[Aa]ll ?[Ii]n$"
-
+        fold_regex = r"^[Ff]old"
         if re.search(check_regex, action):
             return PlayerActionEnum.CHECK
         elif re.search(call_regex, action):
@@ -129,6 +156,8 @@ class PlayerActionEnum(Enum):
             return PlayerActionEnum.RAISE
         elif re.search(all_in_regex, action):
             return PlayerActionEnum.ALL_IN
+        elif re.search(fold_regex, action):
+            return PlayerActionEnum.FOLD
         else:
             raise ValueError("Please retype your action")
 
@@ -148,7 +177,8 @@ class PlayerAction():
         self.action = PlayerActionEnum.grok_action(action)
 
     def set_bet(self, bet):
-        if not bet >= 0:
-            raise ValueError
+        print(bet)
+        if bet < 0:
+            raise ValueError("Bet has to be bigger than 0")
         self.bet = bet
     

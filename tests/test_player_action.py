@@ -13,6 +13,8 @@ class TestPlayerActionEnum(unittest.TestCase):
         self.assertEqual(PlayerActionEnum.grok_action("bet"), PlayerActionEnum.BET)
         self.assertEqual(PlayerActionEnum.grok_action("raise"), PlayerActionEnum.RAISE)
         self.assertEqual(PlayerActionEnum.grok_action("all in"), PlayerActionEnum.ALL_IN)
+        self.assertEqual(PlayerActionEnum.grok_action("Fold"), PlayerActionEnum.FOLD)
+
         with self.assertRaises(ValueError):
             PlayerActionEnum.grok_action("Not an action")
 
@@ -38,7 +40,12 @@ class TestPlayerAction(unittest.TestCase):
         self.assertEqual(action.get_bet(), 1000)
         with self.assertRaises(ValueError):
             action = PlayerAction("Bet", -1)
-        
+    
+    def test_set_bet(self):
+        action = PlayerAction("Bet", 0)
+        self.assertEqual(action.get_bet(), 0)
+        action.set_bet(200)
+        self.assertEqual(action.get_bet(), 200)
 
 if __name__ == "__main__":
     unittest.main()
