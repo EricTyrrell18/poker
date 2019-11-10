@@ -3,7 +3,7 @@
 from cards import Card, Suit, Deck
 
 from functools import reduce
-from player import Player
+from player import Player, PlayerAction, PlayerActionEnum
 from enum import Enum
 import sys
 import pickle
@@ -88,18 +88,6 @@ class TexasHandEvaluator():
         # If it's greater than one it can't be a flush
         return suit_check == 1
 
-class TexasHoldemActions(Enum):
-    """
-    Functionality pertaining to the various actions a player can take.
-    Mainly: check, bet, raise, and fold.
-    """
-    CHECK = 0
-    BET = 1
-    CALL = 2
-    RAISE = 3
-    FOLD = 4
-    ALLIN=5
-
 class TexasHoldemState():
     """Class responsible for maintaining the state of the hand."""
     def __init__(self):
@@ -110,7 +98,7 @@ class TexasHoldemState():
         
         self.big_blind = 2
         self.small_blind = 1
-        self.pot = self.big_blind + self.small_blind
+        self.pot = self.small_blind + self.big_blind
         self.cur_bet = 2
         # Used to determine when to move to the next street
         # If play goes around to the last aggressor, Move to next street
@@ -166,6 +154,7 @@ class TexasHoldemState():
 
     def display_state(self):
         print("current pot size is {}".format(self.pot))
+        print("current bet is {}".format(self.cur_bet))
         print("current minimum bet is {}".format(self.minimum_bet_size))
         self.display_board()
 
@@ -184,6 +173,8 @@ class TexasHoldemGame():
         self.players = list(players)
         self.cur_players = list(players)
         self.state = TexasHoldemState()
+        self.small_blind = 0
+        self.big_blind = 0
 
     def start_hand(self):
         """Clear the board, shuffle the deck, and begin the hand"""
@@ -192,12 +183,13 @@ class TexasHoldemGame():
         
         #Set up the blinds
         self.small_blind = (self.state.button + 1) % len(self.players)
-        self.players[self.small_blind].subtract_from_stack(1)
+        self.players[self.small_blind].make_bet(1)
 
         self.big_blind = (self.state.button + 2) % len(self.players)  
-        self.players[self.big_blind].subtract_from_stack(2)
+        self.players[self.big_blind].make_bet(2)
 
         self.play_hand()
+        
 
     def play_hand(self):
         try:
@@ -223,26 +215,32 @@ class TexasHoldemGame():
         #    self.perform_player_action(player, action, bet)
         
         cur_player_index = self.small_blind
+        # When it's the beginning of a hand, action begins with the player after the big blind
         if self.state.board == []:
             cur_player_index = (self.big_blind + 1) % len(self.cur_players)
+        else:
+            self.clean_players()
+        # Used to check if the players checked, or folded, around
         initial_player_count = len(self.cur_players)
 
+        # If there's only one player left end the hand
         while len(self.cur_players) > 1:
             player = self.cur_players[cur_player_index]
+            # Check if action should continue
             if player == self.state.last_aggressor or self.state.counter == initial_player_count:
                 break
-            # Handle Preflop 
-            # Checks to see if there've been more actions than players
             # If there's a bet, it resets the counter
             print("pot: {} chips".format(self.state.pot))
             player.display_player()
 
-            action, bet = player.get_action(self.state.cur_bet) 
+            action = player.get_action(self.state.cur_bet, self.state.minimum_bet_size) 
            
-            self.perform_player_action(player, action, bet)
+            self.perform_player_action(player, action)
+
             cur_player_index = (cur_player_index + 1) % len(self.cur_players)
 
             self.state.counter += 1
+
         if len(self.cur_players) == 1:
             raise EOHError("End of Hand")
         #Reset players for the next street
@@ -259,7 +257,11 @@ class TexasHoldemGame():
         self.state.flop()
         self.state.display_state()
         self.get_player_actions()
-
+        
+    def clean_players(self):
+        for player in self.players:
+            player.cur_bet = 0
+            player.prev_bet = 0
 
     def turn_actions(self):
         print("turn")
@@ -282,29 +284,40 @@ class TexasHoldemGame():
 
 
 
-    def perform_player_action(self, player, action, bet):
+    def perform_player_action(self, player, action):
         """
         Handle actions which will affect the state.
         May throw value errors if a bet size is too small.
         Seems like raising and betting have the same affect,
         but I'm going to keep them separate just in case it needs to be changed.
         """
-        
-        if action == "Check":
-            self.handle_check(player, bet)
-        elif action == "Bet":
-            self.handle_bet(player, bet)
-        elif action =="Call":
-            self.handle_call(player, bet)
-        elif action =="Raise":
-            self.handle_bet(player, bet)
-        elif action == "Fold":
-            self.handle_fold(player, bet)
-        elif action == "All in":
-            self.handle_all_in(player, bet)
+        if action.get_action() == PlayerActionEnum.CHECK:
+            self.handle_check(player)
+        elif action.get_action() == PlayerActionEnum.CALL:
+            self.handle_call(player, action.get_bet())
+        elif action.get_action() == PlayerActionEnum.BET:
+            self.handle_bet(player, action.get_bet())
+        elif action.get_action() == PlayerActionEnum.RAISE:
+            self.handle_bet(player, action.get_bet())
+        elif action.get_action() == PlayerActionEnum.ALL_IN:
+            self.handle_bet(player, action.get_bet())
+        elif action.get_action() == PlayerActionEnum.FOLD:
+            self.handle_fold(player)
         else:
-            raise ValueError("Invalid action: {}".format(str(action)))
+            raise ValueError("Invalid action: {}")
 
+    def handle_check(self, player):
+        """
+        Handles the check action.
+        If the last action performed was, checking isn't allowed. 
+        Raise an error.
+        """
+        print("Player's cur_ber: {}".format(player.get_cur_bet()))
+        print("state cur_bet: {}".format(self.state.cur_bet))
+        print( self.state.cur_bet == player.get_cur_bet())
+        if self.state.cur_bet != player.get_cur_bet():
+            #Unless you're the bigblind and it checks around to you
+            raise ValueError("You cannot check when there's been a bet")
 
     def handle_call(self, player, bet):
         """
@@ -315,18 +328,8 @@ class TexasHoldemGame():
         if self.state.cur_bet == 0:
             raise ValueError("You can't call nothing")
         #A player might have been raised and already have chips in the pot
-        self.state.pot += (self.state.cur_bet - player.get_cur_bet())
-        player.subtract_from_stack(self.state.cur_bet)
-
-    def handle_check(self, player, bet):
-        """
-        Handles the check action.
-        If the last action performed was, checking isn't allowed. 
-        Raise an error.
-        """
-        if self.state.cur_bet != player.get_cur_bet():
-            #Unless you're the bigblind and it checks around to you
-            raise ValueError("You cannot check when there's been a bet")
+        print(self.state.cur_bet - player.prev_bet)
+        self.state.pot += self.state.cur_bet - player.prev_bet
        
     def handle_bet(self, player, bet):
         """
@@ -337,21 +340,22 @@ class TexasHoldemGame():
             raise ValueError("Bet is smaller than minimum bet size.")
         # Example: min bet starts at 2 preflop. I open to 6. min bet size should be 4
         # I get reraised to 10. Min bet size should still be 4. 10 - 6 = 4
-        self.state.cur_bet = bet
-        self.state.pot += (bet - player.get_cur_bet())
-        self.state.minimum_bet_size = (self.state.cur_bet - self.state.minimum_bet_size)
+        print("Bet: {}".format(bet))
+        print("Prev bet: {}".format(player.prev_bet))
+        self.state.pot += bet - player.prev_bet
+        self.state.cur_bet = bet 
+        self.state.minimum_bet_size = (bet - self.state.minimum_bet_size)
         self.state.last_aggressor = player 
-        player.subtract_from_stack(bet)
         self.state.counter = 0
-        
-    def handle_raise(self, bet):
+
+    def handle_raise(self, player, action):
         """
         Same as handle_bet.
         Blank for now, use handle_bet instead
         """
         pass
 
-    def handle_fold(self, player, bet):
+    def handle_fold(self, player):
         """
         Handles the fold action
         Ask if they really want to fold when there's no reason to
@@ -359,8 +363,8 @@ class TexasHoldemGame():
         if self.state.cur_bet == 0:
             raise ValueError("You know you don't have to fold right?")
         self.cur_players.remove(player)
-
-    def handle_all_in(self, bet):
+        
+    def handle_all_in(self, player, bet):
         """
         Handles all in bets
         Sometimes a player will have less than the minimum bet size, 
@@ -369,9 +373,9 @@ class TexasHoldemGame():
         This shouldn't reopen action, and should only be used when
         the player has less than min bet size.
         """
-        self.last_aggressor = player 
-        self.pot += bet
-        self.cur_bet += bet
+        self.state.last_aggressor = player 
+        self.state.pot += bet 
+        self.state.cur_bet = bet
 
     def showdown(self):
         """

@@ -10,7 +10,8 @@ class Player():
         self.chips = 500
         #Use this to keep track of how much money they have in the current street of action
         self.cur_bet = 0
-        self.test = 0
+        self.prev_bet = 0
+
     def __eq__(self, other):
         return self.name == other.name
 
@@ -65,10 +66,11 @@ class Player():
         while not valid_action:
             try:
                 action = PlayerAction(self.get_input_action(), 0)
-                if action.get_action() == PlayerActionEnum.ALL_IN:
-                    action.set_bet(self.chips)
-                elif action.get_action() == PlayerActionEnum.BET:
-                    print("action is bet")
+                if action.get_action == PlayerActionEnum.CHECK:
+                    pass
+                elif action.get_action() == PlayerActionEnum.CALL:
+                    action.set_bet(cur_bet)
+                elif action.get_action() == PlayerActionEnum.BET or action.get_action() == PlayerActionEnum.RAISE:
                     bet = self.get_input_bet()
                     action.set_bet(bet)
                     print("bet = {}".format(action.get_bet()))
@@ -76,17 +78,18 @@ class Player():
                         raise ValueError("Don't have enough chips")
                     if action.get_bet() < min_bet:
                         raise ValueError("Bet not large enough")
-                elif action.get_action() == PlayerActionEnum.CALL:
-                    action.set_bet(cur_bet)
+                elif action.get_action() == PlayerActionEnum.ALL_IN:
+                    action.set_bet(self.chips + self.cur_bet)
                 elif action.get_action() == PlayerActionEnum.FOLD:
                     pass
-                else:
-                    print("What is this?")
                 valid_action = True
             except ValueError:
                 continue
-        self.make_bet(action.get_bet()) 
-
+        if action.get_action() == PlayerActionEnum.BET or action.get_action() == PlayerActionEnum.ALL_IN or action.get_action() == PlayerActionEnum.RAISE: 
+            self.make_bet(action.get_bet()) 
+        elif action.get_action() == PlayerActionEnum.CALL:
+            self.make_call(action.get_bet())
+        
         return action
 
     def get_cur_bet(self):
@@ -103,29 +106,28 @@ class Player():
     def get_input_bet(self):
         print("{} chips".format(str(self.chips)))
         bet = int(input("How much do you want to bet?"))
-        self.test = bet
         return bet
 
     def get_input_action(self):
         action = input("What action will you take?")
         return action
-
-    def make_bet(self, chips):
+    
+    def make_call(self, bet):
+        self.chips -= bet - self.cur_bet
+        self.prev_bet = self.cur_bet
+        self.cur_bet = bet 
+    def make_bet(self, bet):
         """Subtract the bet from our chips and make a note of how much we've bet"""
-        self.chips -= (chips - self.cur_bet)
-        self.cur_bet = chips
-
-    def subtract_from_stack(self, chips):
-        chips = (chips - self.cur_bet)
-        if chips > self.chips:
-            raise ValueError("Not Enough chips, did you mean to go all in instead?")
-        self.chips -= chips 
-        self.cur_bet += chips
-
+        self.chips -= bet - self.cur_bet
+        self.prev_bet = self.cur_bet
+        self.cur_bet = bet 
+        
+        
     def display_player(self):
         print("name: {}".format(self.name))
         print("chips: {}".format(self.chips))
         print("cur_bet: {}".format(self.cur_bet))
+        print("prev_bet: {}".format(self.prev_bet))
 
 
 
