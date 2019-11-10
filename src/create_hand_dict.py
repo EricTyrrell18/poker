@@ -24,14 +24,14 @@ class FiveCardGenerator():
         self.straights = [(Rank.TWO, Rank.THREE, Rank.FOUR, Rank.FIVE, Rank.SIX,)]
     def create_hand_db(self):
         """Add the hands sequentially to the dict"""
-        test.gen_high_cards()
-        test.gen_pairs()
-        test.gen_two_pairs()
-        test.gen_three_of_kind()
-        test.gen_straights()
-        test.gen_flushes()
-        test.gen_full_house()
-        test.gen_four_of_kind()
+        self.gen_high_cards()
+        self.gen_pairs()
+        self.gen_two_pairs()
+        self.gen_three_of_kind()
+        self.gen_straights()
+        self.gen_flushes()
+        self.gen_full_house()
+        self.gen_four_of_kind()
 
     def save_hand_db(self):
         f = open("handDB.pkl", "wb")
